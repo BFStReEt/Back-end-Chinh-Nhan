@@ -45,6 +45,82 @@ class ProductController extends Controller
         return $dataOp;
     }
 
+    //Truyền slug lấy ra phần thông số kỹ thuật của sản phẩm
+    public function getProductProperties(Request $request)
+    {
+        try {
+            $slug = $request->slug;
+
+            $productDesc = DB::table('product_descs')
+                ->where('friendly_url', $slug)
+                ->first();
+
+            if (!$productDesc) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Product not found',
+                ], 404);
+            }
+
+            $productId = $productDesc->product_id;
+
+            $price = DB::table('price')
+                ->where('product_id', $productId)
+                ->first();
+
+            if (!$price) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Product not found',
+                ], 404);
+            }
+
+            $priceId = $price->id;
+
+            $productProperties = DB::table('product_properties')
+                ->where('price_id', $priceId)
+                ->get();
+
+            $properties = DB::table('properties')
+                ->whereIn('id', $productProperties->pluck('properties_id'))
+                ->get()
+                ->keyBy('id');
+
+            // $result = $productProperties->map(function ($item) use ($properties) {
+            //     $description = $properties[$item->properties_id]->description ?? null;
+            //     if ($description === null) {
+            //         return null;
+            //     }
+            //     return [
+            //         'title' => $title,
+            //         'description' => $item->description,
+            //     ];
+            // })->filter()->values();
+
+            $result = $productProperties->map(function ($item) use ($properties) {
+                $title = $properties[$item->properties_id]->title ?? null;
+                $description = $item->description;
+                if ($title === null || $description === null) {
+                    return null;
+                }
+                return [
+                    'title' => $title,
+                    'description' => $description,
+                ];
+            })->filter()->values();
+
+            return response()->json([
+                'status' => true,
+                'data' => $result,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getProductTechnology($slug)
     {
         try {
@@ -320,11 +396,14 @@ class ProductController extends Controller
             $image = $productDesc->product->picture;
             return response()->json([
                 'status' => true,
-                'productName' => $title,
-                'description' => $description,
-                'metakey' => $metakey,
-                'metadesc' => $metadesc,
-                'image' => $image,
+                'data' => [
+                    'status' => true,
+                    'productName' => $title,
+                    'description' => $description,
+                    'metakey' => $metakey,
+                    'metadesc' => $metadesc,
+                    'image' => $image,
+                ],
             ]);
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();

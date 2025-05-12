@@ -318,6 +318,9 @@ Route::group(['prefix' => 'member'], function () {
 
     //Lấy ra sản phẩm bạn có thể quan tâm
     Route::get('/get-product-related', [App\Http\Controllers\Member\ProductController::class, 'getProductRelated']);
+    //Lấy ra thông số kỹ thuật
+
+    Route::get('/get-product-technologies', [App\Http\Controllers\Member\ProductController::class, 'getProductProperties']);
 
     Route::get('/get-product-technology/{productId}', [App\Http\Controllers\Member\ProductController::class, 'getProductTechnology']);
     Route::get('/get-product-description/{productId}', [App\Http\Controllers\Member\ProductController::class, 'getDescription']);
